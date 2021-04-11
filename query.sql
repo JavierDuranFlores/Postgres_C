@@ -33,25 +33,24 @@ CREATE TABLE medicos (
     sexo CHARACTER VARYING(1) NOT NULL,
     edad INT,
     telefono CHARACTER VARYING(20) NOT NULL,
-    especialidad CHARACTER VARYING(25) NOT NULL,
     CONSTRAINT pk_medicos_id PRIMARY KEY(ID),
     CONSTRAINT ck_medicos_sexo CHECK (sexo ~ '^[HM]$'),
     CONSTRAINT ck_medicos_edad CHECK (edad > 0 AND edad < 100),
     CONSTRAINT ck_pacientes_telefono CHECK (telefono ~ '[\(]?[\+]?(\d{2}|\d{3})[\)]?[\s]?((\d{6}|\d{8})|(\d{3}[\*\.\-\s]){3}|(\d{2}[\*\.\-\s]){4}|(\d{4}[\*\.\-\s]){2})|\d{8}|\d{10}|\d{12}')
 );
 
-INSERT INTO medicos (nombre, apellidoP, apellidoM, sexo, edad, telefono, especialidad)
-VALUES ('Rosalia', 'Trujillo', 'Hernandez', 'M', 38, '8942603494', 'Cardiología'),
-       ('Martha Patricia', 'Xuconostli', 'Palma', 'M', 35, '7984329988', 'Pediatría'),
-       ('Alberto', 'Limon', 'Mendoza', 'H', 39, '6656710078', 'Neumología'),
-       ('Jose luis', 'Perez', 'Gonzalez', 'H', 40, '8780222030',	'Nutriología'),
-       ('Oscar', 'Arreola', 'Peregrina', 'H', 48, '7476706847', 'Psiquiatría');
+INSERT INTO medicos (nombre, apellidoP, apellidoM, sexo, edad, telefono)
+VALUES ('Rosalia', 'Trujillo', 'Hernandez', 'M', 38, '8942603494'),
+       ('Martha Patricia', 'Xuconostli', 'Palma', 'M', 35, '7984329988'),
+       ('Alberto', 'Limon', 'Mendoza', 'H', 39, '6656710078'),
+       ('Jose luis', 'Perez', 'Gonzalez', 'H', 40, '8780222030'),
+       ('Oscar', 'Arreola', 'Peregrina', 'H', 48, '7476706847');
 
 CREATE TABLE consultas (
     ID SMALLSERIAL,
     IDP INT,
     IDM INT,
-    fecha DATE DEFAULT NOW(),
+    fecha DATE DEFAULT NOW(),especialidad_medicos
     CONSTRAINT pk_consultas_id PRIMARY KEY(ID),
     CONSTRAINT fk_consultas_pacientes_idp FOREIGN KEY (IDP) 
         REFERENCES pacientes (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
@@ -61,25 +60,42 @@ CREATE TABLE consultas (
 
 INSERT INTO consultas (idp, idm) VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
 
+CREATE TABLE especialidad (
+    id SMALLSERIAL,
+    especialidad CHARACTER VARYING(20) UNIQUE,
+    
+    CONSTRAINT pk_especialidad_id PRIMARY KEY (id)
+);
+
+ALTER TABLE especialidad RENAME CONSTRAINT pk_especialidad_medicos_id TO pk_especialidad_id;
+
+
+INSERT INTO especialidad (especialidad) VALUES ('Cardiología'), ('Pediatría'), ('Neumología'), ('Nutriología'), ('Psiquiatría');
+
 CREATE TABLE medicamentos (
     ID SMALLSERIAL,
     nombre CHARACTER VARYING(30) UNIQUE,
-    CONSTRAINT pk_medicamentos_id PRIMARY KEY(ID)
+    IDE INT,
+    CONSTRAINT pk_medicamentos_id PRIMARY KEY(ID),
+    CONSTRAINT fk_medicamentos_especialidad_medicos_id FOREIGN KEY (IDE)
+        REFERENCES especialidad (ID) ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 -- FARMACOS Cardiovasculares
-INSERT INTO medicamentos (nombre) VALUES ('Fármacos Inotrópicos'), ('Fármacos Lusitrópicos'), ('Fármacos cronotrópicos'), ('Fármacos presores');
+INSERT INTO medicamentos (nombre, ide) VALUES ('Fármacos Inotrópicos', 1), ('Fármacos Lusitrópicos', 1), ('Fármacos cronotrópicos', 1), ('Fármacos presores', 1);
 
 -- FARMACOS pediatría
-INSERT INTO medicamentos (nombre) VALUES ('Captopril'), ('Minoxidil'), ('Hidralacina'), ('Espironolactona'), ('Propanolol'), ('Furosemida');
+INSERT INTO medicamentos (nombre, ide) VALUES ('Captopril', 2), ('Minoxidil', 2), ('Hidralacina', 2), ('Espironolactona', 2), ('Propanolol', 2), ('Furosemida', 2);
 
 -- FARMACOS Neumología
-INSERT INTO medicamentos (nombre) VALUES ('Alfa-dornasa'), ('Ambroxol'), ('Aminofilina'), ('Benzonatato'), ('Beractant'), ('Budesonida');
+INSERT INTO medicamentos (nombre, ide) VALUES ('Alfa-dornasa', 3), ('Ambroxol', 3), ('Aminofilina', 3), ('Benzonatato', 3), ('Beractant', 3), ('Budesonida', 3);
 
 -- FARMACOS Nutriología
-INSERT INTO medicamentos (nombre) VALUES ('Tiamina (B1)'), ('Riboflavina (B2)'), ('Niacina (B3)'), ('Piridoxina (B6)'), ('Cianocobalamina (B12)');
+INSERT INTO medicamentos (nombre, ide) VALUES ('Tiamina (B1)', 4), ('Riboflavina (B2)', 4), ('Niacina (B3)', 4), ('Piridoxina (B6)', 4), ('Cianocobalamina (B12)', 4);
 
 -- FARMACOS Psiquiatría
-INSERT INTO medicamentos (nombre) VALUES ('Clorpromazina'), ('Flufenazina'), ('Haloperidol');
+INSERT INTO medicamentos (nombre, ide) VALUES ('Clorpromazina', 5), ('Flufenazina', 5), ('Haloperidol', 5);
+
+INSERT INTO especialidad_medicos (especialidad) VALUES ('Cardiología'), ('Pediatría'), ('Neumología'), ('Nutriología'), ('Psiquiatría');
 
 CREATE TABLE detalles_consulta_medicos (
     ID SMALLSERIAL,
@@ -92,7 +108,18 @@ CREATE TABLE detalles_consulta_medicos (
     CONSTRAINT pk_detalles_consulta_medicos_id PRIMARY KEY(ID, IDC, IDM)
 ); 
 
-INSERT INTO detalles_consulta_medicos VALUES (1, 1, 1), (2, 1, 2), (3, 2, 5), (4, 2, 6), (5, 3, 11), (6, 3, 12), (7, 4, 17), (8, 4, 18), (9, 4, 19), (10, 5, 23);
+INSERT INTO detalles_consulta_medicos VALUES (1, 1, 1), (2, 1, 2), (3, 2, 5), (4, 2, 6), (5, 3, 11), (6, 3, 12), (7, 4, 17), (8, 4, 18), (9, 4, 19), (10, 5, 23), (11, 5, 22);
+
+CREATE TABLE especialidad_medicos (
+    ID SMALLSERIAL,
+    IDM INT,
+    IDE INT,
+    CONSTRAINT pk_especialidad_medicos_id PRIMARY KEY (ID),
+    CONSTRAINT fk_especialidad_medicos_medicos_id FOREIGN KEY (IDM)
+        REFERENCES medicos (ID) ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+INSERT INTO especialidad_medicos VALUES (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5);
 
 /* FUNCION DES PACIENTES */
 CREATE OR REPLACE FUNCTION consulta_pacientes(_limite CHARACTER VARYING, _pagina CHARACTER VARYING)
@@ -101,7 +128,7 @@ $BODY$
     DECLARE
         inicio INT;
     BEGIN
-        inicio = _limite:INT * _pagina::INT - _limite::INT;
+        inicio = _limite::INT * _pagina::INT - _limite::INT;
         RETURN QUERY SELECT id, nombre, apellidop, apellidom, sexo, edad, telefono, calle, numero, ciudad 
                      FROM pacientes ORDER BY nombre
                      LIMIT _limite::INT OFFSET inicio;
@@ -112,26 +139,41 @@ LANGUAGE plpgsql;
 SELECT consulta_pacientes('10', '2');
 
 /* FUNCION DE MEDICOS */
-CREATE OR REPLACE FUNCTION consulta_medicos(_limite INT, _pagina INT)
-RETURNS SETOF medicos AS
+CREATE OR REPLACE FUNCTION consulta_medicos(_limite CHARACTER VARYING, _pagina CHARACTER VARYING)
+RETURNS TABLE (
+    id SMALLINT,
+    nombre CHARACTER VARYING,
+    apellidop CHARACTER VARYING,
+    apellidom CHARACTER VARYING,
+    sexo CHARACTER VARYING,
+    edad INT,
+    telefono CHARACTER VARYING,
+    especialidad CHARACTER VARYING
+) AS
 $BODY$
     DECLARE
         inicio INT;
     BEGIN
-        inicio = _limite * _pagina - _limite;
-        RETURN QUERY SELECT id, nombre, apellidop, apellidom, sexo, edad, telefono, especialidad 
-                     FROM medicos ORDER BY nombre
-                     LIMIT _limite OFFSET inicio;
-                    
+        inicio = _limite::INT * _pagina::INT - _limite::INT;
+
+        RETURN QUERY SELECT m.id, m.nombre, m.apellidop, m.apellidom, m.sexo, m.edad, m.telefono, e.especialidad
+        FROM medicos AS m
+        INNER JOIN especialidad AS e
+        ON m.id = e.id
+        LIMIT _limite::INT OFFSET inicio;
+        
     END;
 $BODY$
 LANGUAGE plpgsql;
 
 /* FUNCION DE CONSULTAS */
-CREATE OR REPLACE FUNCTION consulta_consultas()
+CREATE OR REPLACE FUNCTION consulta_consultas(_limite CHARACTER VARYING, _pagina CHARACTER VARYING)
 RETURNS SETOF consultas AS
 $BODY$
+    DECLARE
+        inicio INT;
     BEGIN
+        inicio = _limite::INT * _pagina::INT - _limite::INT;
         RETURN QUERY SELECT id, idp, idm, fecha FROM consultas ORDER BY fecha;
     END;
 $BODY$
@@ -196,7 +238,7 @@ $BODY$
 LANGUAGE plpgsql;
 
 -- Consulta donde muestre las consultas del paciente x
-
+-- CONSULTAS ANTERIORES 
 SELECT c.id, c.idp, c.idm
     , p.nombre AS nombrepaciente
     , p.apellidop AS apellidompaciente
@@ -269,9 +311,25 @@ $BODY$
 LANGUAGE plpgsql;
 
 
+SELECT c.id, c.idp, c.idm
+                        , p.nombre AS nombrepaciente
+                        , p.apellidop AS apellidompaciente
+                        , p.apellidom AS apellidoppaciente
+                        , m.nombre AS nombremedico
+                        , m.apellidop AS apellidopmedico
+                        , m.apellidom AS apellidommedico
+                        , c.fecha
+                    FROM consultas AS c
+                    INNER JOIN pacientes AS p
+                    ON c.idp = p.id
+                    INNER JOIN medicos AS m
+                    ON c.idm = m.id
+                    WHERE c.idm = 1;
 
-
-
+SELECT m.id, m.nombre, m.apellidop, m.apellidom, m.sexo, m.edad, m.telefono, e.especialidad
+FROM medicos AS m
+INNER JOIN especialidad AS e
+ON m.id = e.id;
 
 
 

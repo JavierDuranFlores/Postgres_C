@@ -70,11 +70,38 @@ int main () {
     
     PGconn * conexion = conexion_db();
 
-    menu(conexion);
+    menu(conexion );
     
-    printf("\n\n");
+    printf( "\n\n" );
     
     return 0;
+
+}
+
+void inicio () {
+    
+    int opcion = 0;
+    do {
+
+        printf("\n|-----------------|");
+        printf("\n|    * Incio *    |");
+        printf("\n|-----------------|");
+        printf("\n| 1. Administrador|");
+        printf("\n| 2. Usuario      |");
+        printf("\n| 3. Salir        |");
+        printf("\n|-----------------|");
+        printf("\n\n Escoja una opcion: ");
+        scanf("%d", &opcion);
+
+        switch(opcion) {
+            case 1:
+                menu_admin ( conexion );                break;
+            case 2:
+                menu_usuario ( conexion );              break;
+            case 3:
+                printf("\n\nPrograma Finalizado\n");    break;
+        }
+    }while (opcion != 3);
 
 }
 
@@ -169,7 +196,7 @@ void menu_buscar() {
         printf("\n|----------------------------|");
         printf("\n| 1. Consultas del Paciente  |");
         printf("\n| 2. Consultas del Medico    |");
-        printf("\n| 4. Salir                   |");
+        printf("\n| 3. Salir                   |");
         printf("\n|--------------|-------------|");
         printf("\n\n Escoja una opcion: ");
         scanf("%d", &opcion);
@@ -216,7 +243,10 @@ void executeQuery_consulta_unidas(char * id, PGconn * conexion, int tipo) {
     int filas = PQntuples (res);
     int i;
     int columnas = PQnfields (res);
-    printf("\n%93s", "TABLA CONSULTAS DE PACIENTE");
+    if (tipo == 1)
+        printf("\n%93s", "TABLA CONSULTAS DE PACIENTE");
+    else 
+        printf("\n%93s", "TABLA CONSULTAS DE MEDICO");
     printf("\n----------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
     char *name = PQfname(res, 0);
@@ -398,8 +428,8 @@ void paginacion_medicos( int tipo ) {
     int i;
     int filas = PQntuples(res);
     int columnas = PQnfields (res);
-    printf("\n%70s", "TABLA MEDICOS");
-    printf("\n-------------------------------------------------------------------------------------------------------------------------------\n");
+    printf("\n%65s", "TABLA MEDICOS");
+    printf("\n--------------------------------------------------------------------------------------------------------------------------\n"); 
 
     char *name = PQfname(res, 0);
     printf("|%-4s|", name);
@@ -423,19 +453,19 @@ void paginacion_medicos( int tipo ) {
     printf("%-20s|", name);
 
     name = PQfname(res, 7);
-    printf("%-25s|", name);
+    printf("%-20s|", name);
 
     printf("\n");
 
     for (i = 0; i < filas; i ++) {
-        printf("-------------------------------------------------------------------------------------------------------------------------------\n");
-        printf("|%-4s|%-20s|%-18s|%-20s|%-6s|%-5s|%-20s|%-26s|\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1)
+        printf("--------------------------------------------------------------------------------------------------------------------------\n");
+        printf("|%-4s|%-20s|%-18s|%-20s|%-6s|%-5s|%-20s|%-21s|\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1)
                       , PQgetvalue(res, i, 2), PQgetvalue(res, i, 3)
                       , PQgetvalue(res, i, 4), PQgetvalue(res, i, 5)
                       , PQgetvalue(res, i, 6), PQgetvalue(res, i, 7));
     }
 
-    printf("-------------------------------------------------------------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------------------------------------------------------\n");
 
     PQclear (res);
 
