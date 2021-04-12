@@ -121,6 +121,35 @@ CREATE TABLE especialidad_medicos (
 
 INSERT INTO especialidad_medicos VALUES (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5);
 
+CREATE TABLE administradores (
+    ID SMALLSERIAL,
+    usuario CHARACTER VARYING(20),
+    contra CHARACTER VARYING(32),
+
+    CONSTRAINT pk_administradores_id PRIMARY KEY (id)
+);
+
+INSERT INTO administradores (usuario, contra) VALUES ('root', ENCRYPT('1234', 'llave', '3des')::TEXT);
+
+INSERT INTO administradores (usuario, contra) VALUES ('root', md5('1234'));
+
+-- 
+
+CREATE OR REPLACE FUNCTION autenticacion (_usuario CHARACTER VARYING, _contra CHARACTER VARYING)
+RETURNS TABLE (usario CHARACTER VARYING)
+AS
+$BODY$
+
+    BEGIN
+
+        RETURN QUERY SELECT usuario FROM administradores WHERE usuario = _usuario AND
+                contra = md5(_contra);
+
+    END;
+
+$BODY$
+LANGUAGE plpgsql;
+
 /* FUNCION DES PACIENTES */
 CREATE OR REPLACE FUNCTION consulta_pacientes(_limite CHARACTER VARYING, _pagina CHARACTER VARYING)
 RETURNS SETOF pacientes AS
@@ -174,7 +203,8 @@ $BODY$
         inicio INT;
     BEGIN
         inicio = _limite::INT * _pagina::INT - _limite::INT;
-        RETURN QUERY SELECT id, idp, idm, fecha FROM consultas ORDER BY fecha;
+        RETURN QUERY SELECT id, idp, idm, fecha FROM consultas ORDER BY fecha
+        LIMIT _limite::INT OFFSET inicio;
     END;
 $BODY$
 LANGUAGE plpgsql;
