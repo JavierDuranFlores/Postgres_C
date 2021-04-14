@@ -129,11 +129,9 @@ CREATE TABLE administradores (
     CONSTRAINT pk_administradores_id PRIMARY KEY (id)
 );
 
-INSERT INTO administradores (usuario, contra) VALUES ('root', ENCRYPT('1234', 'llave', '3des')::TEXT);
-
 INSERT INTO administradores (usuario, contra) VALUES ('root', md5('1234'));
 
--- 
+-- FUNCIONES
 
 CREATE OR REPLACE FUNCTION autenticacion (_usuario CHARACTER VARYING, _contra CHARACTER VARYING)
 RETURNS TABLE (usario CHARACTER VARYING)
@@ -361,8 +359,76 @@ FROM medicos AS m
 INNER JOIN especialidad AS e
 ON m.id = e.id;
 
+-- FUNCION ACTUALIZAR
 
+CREATE OR REPLACE FUNCTION actualizar (_columna CHARACTER VARYING, _nuevo CHARACTER VARYING, _id CHARACTER VARYING, _tabla CHARACTER VARYING) 
+RETURNS VOID AS
+$BODY$
 
+    BEGIN
+        IF _tabla = 'pacientes' THEN
+            IF _columna = 'nombre' THEN 
+                UPDATE pacientes SET nombre = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'apellidop' THEN
+                UPDATE pacientes SET apellidop = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'apellidom' THEN
+                UPDATE pacientes SET apellidom = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'sexo' THEN
+                UPDATE pacientes SET sexo = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'edad' THEN
+                UPDATE pacientes SET edad = _nuevo::INT WHERE id = _id::INT;
+            ELSIF _columna = 'telefono' THEN
+                UPDATE pacientes SET telefono = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'calle' THEN
+                UPDATE pacientes SET calle = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'numero' THEN
+                UPDATE pacientes SET numero = _nuevo::INT WHERE id = _id::INT;
+            ELSE
+                UPDATE pacientes SET ciudad = _nuevo WHERE id = _id::INT;
+            END IF;
+        ELSIF _tabla= 'medicos' THEN
+            IF _columna = 'nombre' THEN
+                UPDATE medicos SET nombre = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'apellidop' THEN
+                UPDATE medicos SET apellidop = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'apellidom' THEN
+                UPDATE medicos SET apellidom = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'sexo' THEN
+                UPDATE medicos SET sexo = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'edad' THEN
+                UPDATE medicos SET edad = _nuevo::INT WHERE id = _id::INT;
+            ELSE
+                UPDATE medicos SET telefono = _nuevo WHERE id = _id::INT;
+            END IF;
+        ELSIF _tabla = 'consultas' THEN
+            IF _columna = 'idp' THEN
+                UPDATE consultas SET idp = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'idm' THEN
+                UPDATE consultas SET idm = _nuevo WHERE id = _id::INT;
+            ELSIF _columna = 'fecha' THEN
+                UPDATE consultas SET fecha = NOW() WHERE id = _id::INT;
+            END IF;
+        END IF;
+    END;
 
+$BODY$
+LANGUAGE plpgsql;
 
+SELECT actualizar ('', '', '', '');
 
+CREATE OR REPLACE FUNCTION eliminar (_id CHARACTER VARYING, _tabla CHARACTER VARYING)
+RETURNS VOID AS
+$BODY$
+
+    BEGIN
+        IF _tabla = 'pacientes' THEN
+            DELETE FROM pacientes WHERE id = _id::INT;
+        ELSIF _tabla= 'medicos' THEN
+            DELETE FROM medicos WHERE id = _id::INT;
+        ELSIF _tabla = 'consultas' THEN
+            DELETE FROM consultas WHERE id = _id::INT;
+        END IF;
+    END;
+
+$BODY$
+LANGUAGE plpgsql;

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libpq-fe.h>          
+#include <libpq-fe.h>
 #define MAX_MULT (120)
 
 /* Variable Global */
@@ -38,69 +38,64 @@ struct consulta {
 /* PROTOTIPOS */
 void inicio ();
 void menu_admin ();
-void menu_usuario ( PGconn * );
+void menu_usuario ();
 void menu_insertar ();
 void menu_consultar ();
 void menu_buscar ();
 void admin_autenticacion ();
-char * query_autenticacion(char * user, char * pass);
+char * query_autenticacion( char *, char * );
 void menu_actualizar ();
-void actualizar_pacientes(PGconn * conexion, int);
-void menu_actualizar_columna (char * id, int tipo);
-void actualizar_nombre(char * id, int tipo);
-void actualizar_apellidop(char * id, int tipo);
-void actualizar_apellidom(char * id, int tipo);
-void actualizar_sexo(char * id, int tipo);
-void actualizar_edad(char * id, int tipo);
-void actualizar_telefono(char * id, int tipo);
-void actualizar_calle(char * id, int tipo);
-void actualizar_numero(char * id, int tipo);
-void actualizar_ciudad(char * id, int tipo);
-void actualizar_idp (char * id, int tipo);
-void actualizar_idm (char * id, int tipo);
-void actualizar_fecha (char * id, int tipo);
-int verificar_id (char * id, int tipo);
-void consultas_unidas(int);
-void executeQuery_consulta_unidas(char *, PGconn *, int );
-char * query_insert_consulta_unidas(char * idp, int );
+void menu_eliminar();
+void actualizar ( int );
+void query_actualizar ( char *,int, int );
+char * columna ( int, int );
+void eliminar ( int );
+int menu_actualizar_columna ( char *, int );
+void query_eliminar ( char *, int );
+int verificar_id ( char *, int );
+void consultas_unidas ( int );
+void executeQuery_consulta_unidas (char *, int );
+char * query_insert_consulta_unidas (char *, int );
 void mostrar ( int );
-void paginacion_pacientes( int );
-void paginacion_medicos( int tipo );
-void paginacion_consultas( int tipo );
-void insertar_pacientes ( struct paciente, PGconn * );
-void executeQuery_pacientes ( struct paciente, PGconn * );
+void paginacion_pacientes ( int );
+void paginacion_medicos ( int );
+void paginacion_consultas ( int );
+void insertar_pacientes ( struct paciente );
+void executeQuery_pacientes ( struct paciente );
 char * query_insert_paciente ( struct paciente );
-void insertar_medicos (struct medico, PGconn * );
-void executeQuery_medicos (struct medico, PGconn * ); 
+void insertar_medicos ( struct medico );
+void executeQuery_medicos ( struct medico );
 char * query_insert_medico (struct medico );
-void insertar_consultas ( struct consulta, PGconn * );
-void executeQuery_consultas ( struct consulta, PGconn * );
+void insertar_consultas ( struct consulta);
+void executeQuery_consultas ( struct consulta);
 char * query_insert_consultas ( struct consulta );
 char * cat_puntero ( char *, char * );
 char * convertir_string ( int );
-int filas_tablas( int );
-void do_exit_res ( PGconn *, PGresult * );
+int filas_tablas ( int );
+void do_exit_res ( PGresult * );
 PGconn * conexion_db ();
-void comprobar_estadodb ( PGconn * );
+void comprobar_estadodb ();
 void do_exit ( PGconn * );
-void comprobar_query(PGresult *res);
+void comprobar_query ( PGresult * );
 char * nextLine ( void );
 void vacia_buffer ();
 
 int main () {
-    
+
     PGconn * conexion = conexion_db();
 
     inicio ();
-    
+
     printf( "\n\n" );
-    
+
+    do_exit(conexion);
+
     return 0;
 
 }
 
 void inicio () {
-    
+
     int opcion = 0;
     do {
 
@@ -116,9 +111,9 @@ void inicio () {
 
         switch(opcion) {
             case 1:
-                admin_autenticacion();                break;
+                admin_autenticacion();                  break;
             case 2:
-                menu_usuario ( conexion );              break;
+                menu_usuario ();                        break;
             case 3:
                 printf("\n\nPrograma Finalizado\n");    break;
         }
@@ -141,20 +136,20 @@ void menu_admin () {
 
         switch(opcion) {
             case 1:
-                menu_insertar();                break;
+                menu_insertar();                        break;
             case 2:
                 menu_consultar();                       break;
             case 3:
                 menu_buscar();                          break;
             case 4:
                 menu_actualizar();                      break;
-            //case 5:
-                //menu_eliminar();                        break;
+            case 5:
+                menu_eliminar();                        break;
         }
     } while (opcion != 6);
 }
 
-void menu_usuario(PGconn * conexion) {
+void menu_usuario() {
     int opcion = 0;
     do {
 
@@ -180,33 +175,8 @@ void menu_usuario(PGconn * conexion) {
     }while (opcion != 4);
 }
 
-void menu_actualizar () {
-    int opcion = 0;
-    do {
 
-        printf("\n|----------------------------|");
-        printf("\n|        * Actualizar *      |");
-        printf("\n|----------------------------|");
-        printf("\n| 1. Pacientes | 2. Medicos  |");
-        printf("\n| 3. Consultas | 4. Salir    |");
-        printf("\n|--------------|-------------|");
-        printf("\n\n Escoja una opcion: ");
-        scanf("%d", &opcion);
-
-        switch(opcion) {
-            case 1:
-                actualizar_pacientes ( conexion, 1);            break;
-            case 2:
-                actualizar_pacientes ( conexion, 2);              break;
-            case 3:
-                actualizar_pacientes ( conexion, 3 );            break;
-            case 4:
-                printf("\n\n Salio del Menu de Actualizar \n\n");    break;
-        }
-    }while (opcion != 4);
-}
-
-void menu_insertar(PGconn * conexion) {
+void menu_insertar() {
         int opcion = 0;
         struct paciente nuevoP;
         struct medico nuevoM;
@@ -224,11 +194,11 @@ void menu_insertar(PGconn * conexion) {
 
         switch(opcion) {
             case 1:
-                insertar_pacientes ( nuevoP, conexion );            break;
+                insertar_pacientes ( nuevoP );                      break;
             case 2:
-                insertar_medicos ( nuevoM, conexion );              break;
+                insertar_medicos ( nuevoM );                        break;
             case 3:
-                insertar_consultas ( nuevoC, conexion );            break;
+                insertar_consultas ( nuevoC );                      break;
             case 4:
                 printf("\n\n Salio del Menu de Consultas \n\n");    break;
         }
@@ -250,13 +220,13 @@ void menu_consultar() {
 
         switch(opcion) {
             case 1:
-                mostrar(1);                                         break;
+                mostrar( 1 );                                         break;
             case 2:
-                mostrar(2);                                         break;
+                mostrar( 2 );                                         break;
             case 3:
-                mostrar(3);                                         break;
+                mostrar( 3 );                                         break;
             case 4:
-                printf("\n\n Salio del Menu de Consultas \n\n");    break;
+                printf("\n\n Salio del Menu de Consultas \n\n");      break;
         }
     }while (opcion != 4);
 }
@@ -278,13 +248,67 @@ void menu_buscar() {
 
         switch(opcion) {
             case 1:
-                consultas_unidas(1);                               break;
+                consultas_unidas( 1 );                               break;
             case 2:
-                consultas_unidas(2);                               break;
+                consultas_unidas(  2);                               break;
             case 3:
-                printf("\n\n Salio del Menu de Consultas \n\n");   break;
+                printf("\n\n Salio del Menu de Consultas \n\n");     break;
         }
     }while (opcion != 3);
+
+}
+
+void menu_actualizar () {
+    int opcion = 0;
+    do {
+
+        printf("\n|----------------------------|");
+        printf("\n|        * Actualizar *      |");
+        printf("\n|----------------------------|");
+        printf("\n| 1. Pacientes | 2. Medicos  |");
+        printf("\n| 3. Consultas | 4. Salir    |");
+        printf("\n|--------------|-------------|");
+        printf("\n\n Escoja una opcion: ");
+        scanf("%d", &opcion);
+
+        switch(opcion) {
+            case 1:
+                actualizar (1);                                     break;
+            case 2:
+                actualizar (2);                                     break;
+            case 3:
+                actualizar (3);                                     break;
+            case 4:
+                printf("\n\n Salio del Menu de Actualizar \n\n");   break;
+        }
+    }while (opcion != 4);
+}
+
+void menu_eliminar() {
+
+    int opcion = 0;
+    do {
+
+        printf("\n|----------------------------|");
+        printf("\n|         * Eliminar *       |");
+        printf("\n|----------------------------|");
+        printf("\n| 1. Pacientes | 2. Medicos  |");
+        printf("\n| 3. Consultas | 4. Salir    |");
+        printf("\n|--------------|-------------|");
+        printf("\n\n Escoja una opcion: ");
+        scanf("%d", &opcion);
+
+        switch(opcion) {
+            case 1:
+                eliminar ( 1 );                                     break;
+            case 2:
+                eliminar ( 2 );                                     break;
+            case 3:
+                eliminar ( 3 );                                     break;
+            case 4:
+                printf("\n\n Salio del Menu de Actualizar \n\n");   break;
+        }
+    }while (opcion != 4);
 
 }
 
@@ -296,9 +320,9 @@ void admin_autenticacion () {
     printf("Contraseña: ");
     char * pass = nextLine();
 
-    PGresult * res = PQexec(conexion, query_autenticacion(user, pass));
+    PGresult * res = PQexec( conexion, query_autenticacion( user, pass ) );
 
-    int columnas = PQntuples (res);
+    int columnas = PQntuples ( res );
 
     if (columnas > 0) {
         menu_admin();
@@ -306,6 +330,8 @@ void admin_autenticacion () {
         printf("Fallo de Autenticación");
         inicio();
     }
+
+    PQclear (res);
 }
 
 char * query_autenticacion(char * user, char * pass) {
@@ -319,33 +345,49 @@ char * query_autenticacion(char * user, char * pass) {
     return sql;
 }
 
-void actualizar_pacientes(PGconn * conexion, int tipo) {
-    vacia_buffer(); 
-    
+void actualizar(int tipo) {
+    vacia_buffer();
+
     printf("ID: ");
     char * id = nextLine();
-    
-    int filas = verificar_id (id, tipo);
+
+    int filas = verificar_id ( id, tipo );
 
     if (filas > 0) {
-        menu_actualizar_columna (id, tipo);
+       int respuesta = menu_actualizar_columna ( id, tipo );
+       query_actualizar ( id, tipo, respuesta );
     }
+
 }
 
-void menu_actualizar_columna (char * id, int tipo) {
+void eliminar (int tipo) {
+    vacia_buffer();
+
+    printf("ID: ");
+    char * id = nextLine();
+
+    int filas = verificar_id ( id, tipo );
+
+    if (filas > 0) {
+       query_eliminar ( id, tipo );
+    }
+
+}
+
+int menu_actualizar_columna (char * id, int tipo) {
     PGresult * res;
     if (tipo == 1) {
-        res = PQexec(conexion, "SELECT * FROM pacientes WHERE 1<>1");
+        res = PQexec( conexion, "SELECT * FROM pacientes WHERE 1<>1" );
     }
     if (tipo == 2) {
-        res = PQexec(conexion, "SELECT * FROM medicos WHERE 1<>1");
+        res = PQexec( conexion, "SELECT * FROM medicos WHERE 1<>1" );
     }
     if (tipo == 3) {
-        res = PQexec(conexion, "SELECT * FROM consultas WHERE 1<>1");
+        res = PQexec( conexion, "SELECT * FROM consultas WHERE 1<>1" );
     }
 
     int columnas = PQnfields (res);
-    if (tipo != 3) { 
+    if (tipo != 3) {
         printf("-------------------------------\n");
     } else {
         printf("----------------\n");
@@ -353,12 +395,12 @@ void menu_actualizar_columna (char * id, int tipo) {
     for (int i=1; i <= columnas; i++) {
 
         char * name = PQfname(res, i-1);
-        
+
         if(i != 1 && i != 2 && tipo == 1){
             printf("| %-1i. %-10s", i-1, name);
         } else if (i == 2 && tipo == 1) {
             printf("|          %-1i. %-10s      ", i-1, name);
-        } 
+        }
 
         if (tipo == 2 && i != 1) {
             printf("|%-1i. %-11s", i-1, name);
@@ -383,369 +425,124 @@ void menu_actualizar_columna (char * id, int tipo) {
         }
 
     }
-    if (tipo != 3) { 
+    if (tipo != 3) {
         printf("-------------------------------\n");
     } else {
         printf("----------------\n");
     }
-    int respuesta;
+
+    int respuesta = 0;
+
     printf("¿Que va actualizar? ");
-    scanf("%i", &respuesta);
+    scanf("%d", &respuesta);
 
-    char * sql;
-    switch (respuesta) {
+    PQclear (res);
 
+    return respuesta;
+}
+
+void query_eliminar (char * id, int _tabla) {
+
+        char * tabla = " ";
+        if (_tabla == 1) {
+            tabla = "pacientes";
+        } else if (_tabla == 2) {
+            tabla = "medicos";
+        } else {
+            tabla = "consultas";
+        }
+
+        char * sql = "SELECT eliminar ('";
+        sql = cat_puntero(sql, id);
+        sql = cat_puntero(sql, "', '");
+        sql = cat_puntero(sql, tabla);
+        sql = cat_puntero(sql, "');");
+
+        PGresult * res =  PQexec(conexion, sql);
+
+        comprobar_query(res);
+
+        PQclear (res);
+}
+
+void query_actualizar (char * id, int _tabla, int respuesta) {
+
+    vacia_buffer();
+
+        char * tabla = " ";
+        if (_tabla == 1) {
+            tabla = "pacientes";
+        } else if (_tabla == 2) {
+            tabla = "medicos";
+        } else {
+            tabla = "consultas";
+        }
+
+        char * column = columna (respuesta, _tabla);
+
+        char * nuevo = " ";
+
+        if (strcmp(column, "fecha")) {
+            printf("Nuevo: ");
+            nuevo = nextLine();
+        }
+
+        char * sql = "SELECT actualizar ('";
+        sql = cat_puntero(sql, column);
+        sql = cat_puntero(sql, "', '");
+        sql = cat_puntero(sql, nuevo);
+        sql = cat_puntero(sql, "', '");
+        sql = cat_puntero(sql, id);
+        sql = cat_puntero(sql, "', '");
+        sql = cat_puntero(sql, tabla);
+        sql = cat_puntero(sql, "');");
+
+        PGresult * res =  PQexec(conexion, sql);
+
+        comprobar_query(res);
+}
+
+char * columna (int _columna, int tabla) {
+    char * columna;
+    switch (tabla) {
         case 1:
-            if (tipo == 1 || tipo ==2 ) {
-                actualizar_nombre(id, tipo);
-                printf("\nNombre Actualizado\n\n");
-            } else {
-                actualizar_idp(id, tipo);
-                printf("\nID del Paciente Actualizado\n\n");
+            switch (_columna) {
+                case 1: columna = "nombre"; break;
+                case 2: columna = "apellidop"; break;
+                case 3: columna = "apellidom"; break;
+                case 4: columna = "sexo"; break;
+                case 5: columna = "edad"; break;
+                case 6: columna = "telefono"; break;
+                case 7: columna = "calle"; break;
+                case 8: columna = "numero"; break;
+                case 9: columna = "ciudad"; break;
             }
-
             break;
         case 2:
-            if (tipo == 1 || tipo ==2 ) {
-                actualizar_apellidop(id, tipo);
-                printf("\nApellido Paterno Actualizado\n\n");
-            } else {
-                actualizar_idm(id, tipo);
-                printf("\nID del Paciente Actualizado\n\n");
+            switch (_columna) {
+                case 1: columna = "nombre"; break;
+                case 2: columna = "apellidop"; break;
+                case 3: columna = "apellidom"; break;
+                case 4: columna = "sexo"; break;
+                case 5: columna = "edad"; break;
+                case 6: columna = "telefono"; break;
             }
             break;
         case 3:
-            if (tipo == 1 || tipo ==2 ) {
-                actualizar_apellidom(id, tipo);
-                printf("\nApellido Materno Actualizado\n\n");    
-            } else {
-                actualizar_fecha(id, tipo);
-                printf("\nFecha Actualizada\n\n");
+            switch (_columna) {
+                case 1: columna =  "idp"; break;
+                case 2: columna =  "idm"; break;
+                case 3: columna = "fecha"; break;
             }
             break;
-        case 4:
-            actualizar_sexo(id, tipo);
-            printf("\nSexo Actualizado\n\n");
-            break;
-        case 5:
-            actualizar_edad(id, tipo);
-            printf("\nEdad Actualizado\n\n");
-            break;
-        case 6:
-            actualizar_telefono(id, tipo);
-            printf("\nTelefono Actualizado\n\n");
-            break;
-        case 7:
-            actualizar_calle(id, tipo);
-            printf("\nCalle Actualizada\n\n");
-            break;
-        case 9:
-            actualizar_numero(id, tipo);
-            printf("\nNumero Actualizada\n\n");
-            break;
-        case 10:
-            actualizar_ciudad(id, tipo);
-            printf("\nCiudad Actualizada\n\n");
-            break;
-
-
     }
-}
-
-void actualizar_nombre(char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("Nombre: ");
-    char * nombre = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET nombre = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET nombre = '";
-    } else {
-        sql = "UPDATE consultas SET nombre = '";
-    }
-
-    sql = cat_puntero(sql, nombre);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-   
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-
-    printf("\nNombre Actualizado\n\n");
-    
-}
-
-void actualizar_apellidop(char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("Apellido Paterno: ");
-    char * apellidop = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET apellidop = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET apellidom = '";
-    } else {
-        sql = "UPDATE consultas SET apellidom = '";
-    }
-
-    sql = cat_puntero(sql, apellidop);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-
-}
-
-void actualizar_apellidom(char * id, int tipo) {
-    vacia_buffer();   
-    char * sql;
-    printf("Apellido Materno: ");
-    char * apellidom = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET apellidom = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET apellidom = '";
-    } else {
-        sql = "UPDATE consultas SET apellidom = '";
-    }
-    
-    sql = cat_puntero(sql, apellidom);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-}
-
-void actualizar_sexo(char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("Sexo [HM]: ");
-    char * sexo = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET sexo = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET sexo = '";
-    } else {
-        sql = "UPDATE consultas SET sexo = '";
-    }
-    
-    sql = cat_puntero(sql, sexo);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-    
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res);
-}
-
-void actualizar_edad(char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("Edad: ");
-    char * edad = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET edad = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET edad = '";
-    } else {
-        sql = "UPDATE consultas SET edad = '";
-    }
-    
-    sql = cat_puntero(sql, edad);
-    sql = cat_puntero(sql, "'::INT WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-    
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res);
-}
-
-void actualizar_telefono(char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("Telefono: ");
-    char * telefono = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET telefono = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET telefono = '";
-    } else {
-        sql = "UPDATE consultas SET telefono = '";
-    }
-    
-    sql = cat_puntero(sql, telefono);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-
-}
-
-void actualizar_calle(char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("Calle: ");
-    char * calle = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET calle = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET calle = '";
-    } else {
-        sql = "UPDATE consultas SET calle = '";
-    }
-
-    sql = cat_puntero(sql, calle);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-}
-
-void actualizar_numero(char * id, int tipo) {
-    vacia_buffer();   
-    char * sql;
-    printf("Numero: ");
-    char * numero = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET numero = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET numero = '";
-    } else {
-        sql = "UPDATE consultas SET numero = '";
-    }
-
-    sql = cat_puntero(sql, numero);
-    sql = cat_puntero(sql, "'::INT WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-}
-
-void actualizar_ciudad(char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("Ciudad: ");
-    char * ciudad = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET ciudad = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET ciudad = '";
-    } else {
-        sql = "UPDATE consultas SET ciudad = '";
-    }
-
-    sql = cat_puntero(sql, ciudad);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-}
-
-void actualizar_idp (char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("ID del Paciente: ");
-    char * idp = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET idp = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET idp = '";
-    } else {
-        sql = "UPDATE consultas SET idp = '";
-    }
-
-    sql = cat_puntero(sql, idp);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-}
-
-void actualizar_idm (char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-    printf("ID del Medico: ");
-    char * idm = nextLine();
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET idm = '";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET idm = '";
-    } else {
-        sql = "UPDATE consultas SET idm = '";
-    }
-
-    sql = cat_puntero(sql, idm);
-    sql = cat_puntero(sql, "' WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
-}
-
-void actualizar_fecha (char * id, int tipo) {
-    vacia_buffer();
-    char * sql;
-
-    if (tipo == 1) {
-        sql = "UPDATE pacientes SET fecha = NOW()";
-    } else if (tipo == 2) {
-        sql = "UPDATE medicos SET fecha = NOW()";
-    } else {
-        sql = "UPDATE consultas SET fecha = NOW()";
-    }
-
-    sql = cat_puntero(sql, " WHERE id = ");
-    sql = cat_puntero(sql, id);
-    sql = cat_puntero(sql, "::INT;");
-
-    PGresult * res =  PQexec(conexion, sql);
-
-    comprobar_query(res) ;
+    return columna;
 }
 
 int verificar_id (char * id, int tipo) {
-    
+
     char * sql = "SELECT * FROM ";
-    
+
     if (tipo == 1) {
         sql = cat_puntero(sql, "pacientes ");
     } else if (tipo == 2) {
@@ -753,7 +550,7 @@ int verificar_id (char * id, int tipo) {
     } else if (tipo == 3) {
         sql = cat_puntero(sql, "consultas ");
     }
-    
+
     sql = cat_puntero (sql, "WHERE id = ");
     sql = cat_puntero (sql, id);
     sql = cat_puntero (sql, "::INT;");
@@ -777,29 +574,19 @@ void consultas_unidas(int tipo) {
     }
     char * id = nextLine();
 
-    executeQuery_consulta_unidas ( id, conexion, tipo );
+    executeQuery_consulta_unidas ( id, tipo );
 }
 
-void executeQuery_consulta_unidas(char * id, PGconn * conexion, int tipo) {
+void executeQuery_consulta_unidas(char * id, int tipo) {
 
     PGresult * res = PQexec(conexion, query_insert_consulta_unidas(id, tipo));
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        do_exit_res(conexion, res);
-    }
-
-    if (PQresultStatus (res) != PGRES_TUPLES_OK) {
-        printf ("No se recuperaron datos \n");
-        PQclear (res);
-        do_exit (conexion);
-    }
 
     int filas = PQntuples (res);
     int i;
     int columnas = PQnfields (res);
     if (tipo == 1)
         printf("\n%93s", "TABLA CONSULTAS DE PACIENTE");
-    else 
+    else
         printf("\n%93s", "TABLA CONSULTAS DE MEDICO");
     printf("\n----------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
@@ -849,11 +636,10 @@ void executeQuery_consulta_unidas(char * id, PGconn * conexion, int tipo) {
 
 }
 
-
 char * query_insert_consulta_unidas(char * id, int tipo) {
-  
+
    char * sql;
-   
+
    if (tipo == 0) {
         sql = "SELECT * FROM consultas_paciente ('";
    } else {
@@ -862,21 +648,21 @@ char * query_insert_consulta_unidas(char * id, int tipo) {
 
    sql = cat_puntero(sql, id);
    sql = cat_puntero(sql, "');");
-    
+
    return sql;
 }
 
 void mostrar (int tipo) {
-    
+
     vacia_buffer();
-    
+
     if (tipo == 1) {
         paginacion_pacientes(tipo);
     }
     else if (tipo == 2) {
         paginacion_medicos(tipo);
     }
-    else { 
+    else {
         paginacion_consultas(tipo);
     }
 
@@ -899,12 +685,6 @@ void paginacion_pacientes(int tipo) {
 
     PGresult * res = PQexec(conexion, sql);
 
-    if (PQresultStatus (res) != PGRES_TUPLES_OK) {
-        printf ("No se recuperaron datos \n");
-        PQclear (res);
-        do_exit (conexion);
-    }
-
     int i;
     int filas = PQntuples(res);
     int columnas = PQnfields (res);
@@ -919,7 +699,7 @@ void paginacion_pacientes(int tipo) {
 
     name = PQfname(res, 2);
     printf("%-18s|", name);
-    
+
     name = PQfname(res, 3);
     printf("%-20s|", name);
 
@@ -973,17 +753,11 @@ void paginacion_medicos( int tipo ) {
 
     PGresult * res = PQexec(conexion, sql);
 
-    if (PQresultStatus (res) != PGRES_TUPLES_OK) {
-        printf ("No se recuperaron datos \n");
-        PQclear (res);
-        do_exit (conexion);
-    }
-
     int i;
     int filas = PQntuples(res);
     int columnas = PQnfields (res);
     printf("\n%65s", "TABLA MEDICOS");
-    printf("\n--------------------------------------------------------------------------------------------------------------------------\n"); 
+    printf("\n--------------------------------------------------------------------------------------------------------------------------\n");
 
     char *name = PQfname(res, 0);
     printf("|%-4s|", name);
@@ -1042,12 +816,6 @@ void paginacion_consultas( int tipo ) {
 
     PGresult * res = PQexec(conexion, sql);
 
-    if (PQresultStatus (res) != PGRES_TUPLES_OK) {
-        printf ("No se recuperaron datos \n");
-        PQclear (res);
-        do_exit (conexion);
-    }
-
     int i;
     int filas = PQntuples(res);
     int columnas = PQnfields (res);
@@ -1079,7 +847,7 @@ void paginacion_consultas( int tipo ) {
     PQclear (res);
 }
 
-void insertar_pacientes (struct paciente nuevo,PGconn * conexion) {
+void insertar_pacientes (struct paciente nuevo) {
 
     vacia_buffer();
 
@@ -1097,10 +865,10 @@ void insertar_pacientes (struct paciente nuevo,PGconn * conexion) {
 
     printf("Edad: ");
     nuevo.edad = nextLine();
-    
+
     printf("Telefono: ");
     nuevo.telefono = nextLine();
-    
+
     printf("Calle: ");
     nuevo.calle = nextLine();
 
@@ -1109,16 +877,16 @@ void insertar_pacientes (struct paciente nuevo,PGconn * conexion) {
 
     printf("Ciudad: ");
     nuevo.ciudad = nextLine();
-   
-    executeQuery_pacientes(nuevo, conexion);
+
+    executeQuery_pacientes(nuevo);
 }
 
-void executeQuery_pacientes(struct paciente nuevo, PGconn * conexion) {
+void executeQuery_pacientes(struct paciente nuevo) {
 
     PGresult * res = PQexec(conexion, query_insert_paciente(nuevo));
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        do_exit_res(conexion, res);
+        do_exit_res(res);
     }
 
     PQclear(res);
@@ -1148,11 +916,11 @@ char * query_insert_paciente(struct paciente nuevo) {
    sql = cat_puntero(sql, "', '");
    sql = cat_puntero(sql, nuevo.ciudad);
    sql = cat_puntero(sql, "');");
-  
+
    return sql;
 }
 
-void insertar_medicos (struct medico nuevo,PGconn * conexion) {
+void insertar_medicos (struct medico nuevo) {
 
     vacia_buffer();
 
@@ -1178,20 +946,21 @@ void insertar_medicos (struct medico nuevo,PGconn * conexion) {
     printf("Especialidad: ");
     nuevo.especialidad = nextLine();
 
-    executeQuery_medicos(nuevo, conexion);
+    executeQuery_medicos(nuevo);
 
 }
 
-void executeQuery_medicos(struct medico nuevo, PGconn * conexion) {
+void executeQuery_medicos(struct medico nuevo) {
 
     PGresult * res = PQexec(conexion, query_insert_medico(nuevo));
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        do_exit_res(conexion, res);
+        do_exit_res (res);
     }
 
     PQclear(res);
     printf("\n Medico agregado \n");
+
 }
 
 char * query_insert_medico(struct medico nuevo) {
@@ -1217,7 +986,7 @@ char * query_insert_medico(struct medico nuevo) {
 
 }
 
-void insertar_consultas (struct consulta nuevo, PGconn * conexion) {
+void insertar_consultas (struct consulta nuevo) {
 
     vacia_buffer();
 
@@ -1227,16 +996,16 @@ void insertar_consultas (struct consulta nuevo, PGconn * conexion) {
     printf("ID Medico: ");
     nuevo.idm = nextLine();
 
-    executeQuery_consultas(nuevo, conexion);
+    executeQuery_consultas(nuevo);
 
 }
 
-void executeQuery_consultas(struct consulta nuevo, PGconn * conexion) {
+void executeQuery_consultas(struct consulta nuevo) {
 
     PGresult * res = PQexec(conexion, query_insert_consultas(nuevo));
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        do_exit_res(conexion, res);
+        do_exit_res(res);
     }
 
     PQclear(res);
@@ -1253,7 +1022,6 @@ char * query_insert_consultas(struct consulta nuevo) {
    sql = cat_puntero(sql, "');");
 
    return sql;
-
 }
 
 char * cat_puntero(char * p1, char * p2) {
@@ -1296,6 +1064,7 @@ int filas_tablas (int tipo) {
     else {
         res = PQexec(conexion, "SELECT * FROM consultas");
     }
+
     return PQntuples (res);
 
 }
@@ -1314,27 +1083,25 @@ PGconn * conexion_db() {
 void comprobar_query (PGresult *res) {
 
      if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        do_exit_res(conexion, res);
-    }
+        printf("Fallo, accion no realizada");
+     }
 
     PQclear(res);
 
 }
 
-void do_exit_res(PGconn *conexion, PGresult *res) {
+void do_exit_res(PGresult * res) {
 
    fprintf(stderr, "%s\n", PQerrorMessage(conexion));
 
     PQclear(res);
-    PQfinish(conexion);
     exit(1);
  }
 
-void comprobar_estadodb(PGconn * conexion) {
+void comprobar_estadodb() {
 
     if (PQstatus (conexion) == CONNECTION_BAD) {
         fprintf (stderr, "Falló la conexión a la base de datos:%s \n", PQerrorMessage (conexion));
-        do_exit (conexion);
     }
 
 }
