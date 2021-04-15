@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <libpq-fe.h>
 #define MAX_MULT (120)
 
@@ -69,23 +70,25 @@ char * query_insert_medico (struct medico );
 void insertar_consultas ( struct consulta);
 void executeQuery_consultas ( struct consulta);
 char * query_insert_consultas ( struct consulta );
-char * cat_puntero ( char *, char * );
+void mostrar_especialidad();
+char * cat_punteros(char * sql, int cantidad, ...);
+char * cat_puntero (char * p1, char * p2);
 char * convertir_string ( int );
 int filas_tablas ( int );
 void do_exit_res ( PGresult * );
 PGconn * conexion_db ();
 void comprobar_estadodb ();
 void do_exit ( PGconn * );
-void comprobar_query ( PGresult * );
+void comprobar_query ( PGresult * , char *);
 char * nextLine ( void );
 void vacia_buffer ();
 
 int main () {
 
-    PGconn * conexion = conexion_db();
+    conexion = conexion_db();
 
     inicio ();
-
+    
     printf( "\n\n" );
 
     do_exit(conexion);
@@ -116,6 +119,8 @@ void inicio () {
                 menu_usuario ();                        break;
             case 3:
                 printf("\n\nPrograma Finalizado\n");    break;
+            default:
+                printf("\nOpcion no disponible\n");     break;
         }
     }while (opcion != 3);
 
@@ -145,6 +150,8 @@ void menu_admin () {
                 menu_actualizar();                      break;
             case 5:
                 menu_eliminar();                        break;
+            default:
+                printf("\nOpcion no disponible\n");     break;
         }
     } while (opcion != 6);
 }
@@ -171,6 +178,8 @@ void menu_usuario() {
                 menu_buscar();                          break;
             case 4:
                 printf("\n\nPrograma Finalizado\n");    break;
+            default:
+                printf("\nOpcion no disponible\n");     break;
         }
     }while (opcion != 4);
 }
@@ -201,6 +210,8 @@ void menu_insertar() {
                 insertar_consultas ( nuevoC );                      break;
             case 4:
                 printf("\n\n Salio del Menu de Consultas \n\n");    break;
+            default:
+                printf("\nOpcion no disponible\n");                 break;
         }
     }while (opcion != 4);
 }
@@ -227,6 +238,8 @@ void menu_consultar() {
                 mostrar( 3 );                                         break;
             case 4:
                 printf("\n\n Salio del Menu de Consultas \n\n");      break;
+            default:
+                printf("\nOpcion no disponible\n");                   break;
         }
     }while (opcion != 4);
 }
@@ -250,9 +263,11 @@ void menu_buscar() {
             case 1:
                 consultas_unidas( 1 );                               break;
             case 2:
-                consultas_unidas(  2);                               break;
+                consultas_unidas( 2 );                               break;
             case 3:
                 printf("\n\n Salio del Menu de Consultas \n\n");     break;
+            default:
+                printf("\nOpcion no disponible\n");                  break;
         }
     }while (opcion != 3);
 
@@ -273,13 +288,15 @@ void menu_actualizar () {
 
         switch(opcion) {
             case 1:
-                actualizar (1);                                     break;
+                actualizar ( 1 );                                   break;
             case 2:
-                actualizar (2);                                     break;
+                actualizar ( 2 );                                   break;
             case 3:
-                actualizar (3);                                     break;
+                actualizar ( 3 );                                   break;
             case 4:
                 printf("\n\n Salio del Menu de Actualizar \n\n");   break;
+            default:
+                printf("\nOpcion no disponible\n");                 break;
         }
     }while (opcion != 4);
 }
@@ -307,6 +324,8 @@ void menu_eliminar() {
                 eliminar ( 3 );                                     break;
             case 4:
                 printf("\n\n Salio del Menu de Actualizar \n\n");   break;
+            default:
+                printf("\nOpcion no disponible\n");                 break;
         }
     }while (opcion != 4);
 
@@ -337,10 +356,7 @@ void admin_autenticacion () {
 char * query_autenticacion(char * user, char * pass) {
     char * sql = "SELECT * FROM autenticacion ('";
 
-    sql = cat_puntero(sql, user);
-    sql = cat_puntero(sql, "', '");
-    sql = cat_puntero(sql, pass);
-    sql = cat_puntero(sql, "');");
+    sql = cat_punteros(sql, 4, user, "', '", pass, "');");
 
     return sql;
 }
@@ -453,14 +469,9 @@ void query_eliminar (char * id, int _tabla) {
         }
 
         char * sql = "SELECT eliminar ('";
-        sql = cat_puntero(sql, id);
-        sql = cat_puntero(sql, "', '");
-        sql = cat_puntero(sql, tabla);
-        sql = cat_puntero(sql, "');");
+        sql = cat_punteros(sql, 4, id, "', '", tabla, "');");
 
         PGresult * res =  PQexec(conexion, sql);
-
-        comprobar_query(res);
 
         PQclear (res);
 }
@@ -488,18 +499,11 @@ void query_actualizar (char * id, int _tabla, int respuesta) {
         }
 
         char * sql = "SELECT actualizar ('";
-        sql = cat_puntero(sql, column);
-        sql = cat_puntero(sql, "', '");
-        sql = cat_puntero(sql, nuevo);
-        sql = cat_puntero(sql, "', '");
-        sql = cat_puntero(sql, id);
-        sql = cat_puntero(sql, "', '");
-        sql = cat_puntero(sql, tabla);
-        sql = cat_puntero(sql, "');");
-
+        sql = cat_punteros(sql, 8, column, "', '", nuevo, "', '", id, "', '", tabla, "');");
+        
         PGresult * res =  PQexec(conexion, sql);
 
-        comprobar_query(res);
+        comprobar_query(res, "UPDATE");
 }
 
 char * columna (int _columna, int tabla) {
@@ -551,9 +555,7 @@ int verificar_id (char * id, int tipo) {
         sql = cat_puntero(sql, "consultas ");
     }
 
-    sql = cat_puntero (sql, "WHERE id = ");
-    sql = cat_puntero (sql, id);
-    sql = cat_puntero (sql, "::INT;");
+    sql = cat_punteros (sql, 3, "WHERE id = ", id, "::INT;");
 
     PGresult * res = PQexec(conexion, sql);
 
@@ -646,8 +648,7 @@ char * query_insert_consulta_unidas(char * id, int tipo) {
         sql = "SELECT * FROM consultas_medico ('";
    }
 
-   sql = cat_puntero(sql, id);
-   sql = cat_puntero(sql, "');");
+   sql = cat_punteros(sql, 2, id, "');");
 
    return sql;
 }
@@ -677,11 +678,8 @@ void paginacion_pacientes(int tipo) {
     char * pagina = nextLine();
 
     char * sql;
-    sql = "SELECT * FROM consulta_pacientes('";
-    sql = cat_puntero(sql, registros);
-    sql = cat_puntero (sql, "', '");
-    sql = cat_puntero (sql, pagina);
-    sql = cat_puntero (sql, "');");
+    sql = "SELECT * FROM consulta_pacientes ('";
+    sql = cat_punteros(sql, 4, registros, "', '", pagina, "');");
 
     PGresult * res = PQexec(conexion, sql);
 
@@ -745,11 +743,8 @@ void paginacion_medicos( int tipo ) {
     char * pagina = nextLine();
 
     char * sql;
-    sql = "SELECT * FROM consulta_medicos('";
-    sql = cat_puntero(sql, registros);
-    sql = cat_puntero (sql, "', '");
-    sql = cat_puntero (sql, pagina);
-    sql = cat_puntero (sql, "');");
+    sql = "SELECT * FROM consulta_medicos ('";
+    sql = cat_punteros(sql, 4, registros, "', '", pagina, "');");
 
     PGresult * res = PQexec(conexion, sql);
 
@@ -808,11 +803,8 @@ void paginacion_consultas( int tipo ) {
     char * pagina = nextLine();
 
     char * sql;
-    sql = "SELECT * FROM consulta_consultas('";
-    sql = cat_puntero(sql, registros);
-    sql = cat_puntero (sql, "', '");
-    sql = cat_puntero (sql, pagina);
-    sql = cat_puntero (sql, "');");
+    sql = "SELECT * FROM consulta_consultas ('";
+    sql = cat_punteros(sql, 4, registros, "', '", pagina, "');");
 
     PGresult * res = PQexec(conexion, sql);
 
@@ -860,7 +852,7 @@ void insertar_pacientes (struct paciente nuevo) {
     printf("Apellido Materno: ");
     nuevo.apellidom = nextLine();
 
-    printf("Sexo: ");
+    printf("Sexo[HM]: ");
     nuevo.sexo = nextLine();
 
     printf("Edad: ");
@@ -898,24 +890,11 @@ char * query_insert_paciente(struct paciente nuevo) {
 
    char * sql = "SELECT pacientes ('";
 
-   sql = cat_puntero(sql, nuevo.nombre);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.apellidop);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.apellidom);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.sexo);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.edad);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.telefono);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.calle);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.numero);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.ciudad);
-   sql = cat_puntero(sql, "');");
+   sql = cat_punteros(sql, 18, nuevo.nombre, "', '", nuevo.apellidop
+                        , "', '", nuevo.apellidom, "', '", nuevo.sexo
+                        , "', '", nuevo.edad, "', '", nuevo.telefono
+                        , "', '", nuevo.calle, "', '", nuevo.numero
+                        , "', '", nuevo.ciudad, "');");
 
    return sql;
 }
@@ -934,7 +913,7 @@ void insertar_medicos (struct medico nuevo) {
     printf("Apellido Materno: ");
     nuevo.apellidom = nextLine();
 
-    printf("Sexo: ");
+    printf("Sexo [HM]: ");
     nuevo.sexo = nextLine();
 
     printf("Edad: ");
@@ -943,7 +922,11 @@ void insertar_medicos (struct medico nuevo) {
     printf("Telefono: ");
     nuevo.telefono = nextLine();
 
-    printf("Especialidad: ");
+    printf("\n");
+    mostrar_especialidad();
+    printf("\n");
+
+    printf("Especialidad [id]: ");
     nuevo.especialidad = nextLine();
 
     executeQuery_medicos(nuevo);
@@ -952,13 +935,36 @@ void insertar_medicos (struct medico nuevo) {
 
 void executeQuery_medicos(struct medico nuevo) {
 
-    PGresult * res = PQexec(conexion, query_insert_medico(nuevo));
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        do_exit_res (res);
-    }
+    PGresult * res = PQexec(conexion, "BEGIN");
 
     PQclear(res);
+    
+    res = PQexec(conexion, query_insert_medico(nuevo));
+
+    res = PQexec (conexion, "SELECT id FROM medicos ORDER BY id DESC LIMIT 1;");
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        res = PQexec(conexion, "ROLLBACK");
+    }
+    
+    char * idmedico = PQgetvalue(res, 0, 0);
+
+    printf("%s", idmedico);
+
+    char * sql = "SELECT especialidad_medicos ('";
+
+    sql = cat_punteros (sql, 4, idmedico, "', '", nuevo.especialidad, "');");
+
+    res = PQexec (conexion, sql);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        res = PQexec(conexion, "ROLLBACK");
+    }
+
+    res = PQexec(conexion, "COMMIT");
+
+    PQclear(res);
+
     printf("\n Medico agregado \n");
 
 }
@@ -967,20 +973,9 @@ char * query_insert_medico(struct medico nuevo) {
 
    char * sql = "SELECT medicos ('";
 
-   sql = cat_puntero(sql, nuevo.nombre);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.apellidop);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.apellidom);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.sexo);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.edad);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.telefono);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.especialidad);
-   sql = cat_puntero(sql, "');");
+   sql = cat_punteros(sql, 12, nuevo.nombre, "', '", nuevo.apellidop
+                             , "', '", nuevo.apellidom, "', '", nuevo.sexo
+                             , "', '", nuevo.edad, "', '", nuevo.telefono, "');");
 
    return sql;
 
@@ -1016,15 +1011,59 @@ char * query_insert_consultas(struct consulta nuevo) {
 
    char * sql = "SELECT consultas ('";
 
-   sql = cat_puntero(sql, nuevo.idp);
-   sql = cat_puntero(sql, "', '");
-   sql = cat_puntero(sql, nuevo.idm);
-   sql = cat_puntero(sql, "');");
+   sql = cat_punteros(sql, 4, nuevo.idp, "', '", nuevo.idm, "');");
 
    return sql;
 }
 
-char * cat_puntero(char * p1, char * p2) {
+char * cat_punteros(char * sql, int cantidad, ...) {
+   
+    va_list lista_argumentos;
+    va_start (lista_argumentos, cantidad);
+    char * p_concatenado = " ";
+
+    for (int i = 0; i < cantidad; i++) {
+        sql = cat_puntero(sql, va_arg(lista_argumentos, char *));
+        p_concatenado=cat_puntero(sql, "");
+    }
+
+    va_end(lista_argumentos);
+
+    return p_concatenado;
+}
+
+void mostrar_especialidad() {
+    
+    char * sql = "SELECT * FROM especialidad ORDER BY id ASC;";
+
+    PGresult * res = PQexec(conexion, sql);
+    
+    int filas = PQntuples(res);
+
+    int columnas = PQnfields (res);
+    printf("\n    %s", "TABLA ESPECIALIDAD");
+    printf("\n--------------------------\n");
+
+    char *name = PQfname(res, 0);
+    printf("|%-4s|", name);
+
+    name = PQfname(res, 1);
+    printf("%-19s|", name);
+
+    printf("\n");
+
+    for (int i = 0; i < filas; i ++) {
+        printf("--------------------------\n");
+        printf("|%-4s|%-20s|\n", PQgetvalue(res, i, 0), PQgetvalue(res, i, 1));
+    }
+
+    printf("--------------------------\n");
+
+    PQclear (res);
+
+}
+
+char * cat_puntero (char * p1, char * p2) {
     int i = 0;
     char * p_concatenado = malloc(strlen(p1) + strlen(p2) + 1);
 
@@ -1080,10 +1119,10 @@ PGconn * conexion_db() {
     return conexion;
 }
 
-void comprobar_query (PGresult *res) {
+void comprobar_query (PGresult * res, char * msj) {
 
-     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        printf("Fallo, accion no realizada");
+     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        printf("Fallo, %s no realizado", msj);
      }
 
     PQclear(res);

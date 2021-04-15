@@ -50,12 +50,12 @@ CREATE TABLE consultas (
     ID SMALLSERIAL,
     IDP INT,
     IDM INT,
-    fecha DATE DEFAULT NOW(),especialidad_medicos
+    fecha DATE DEFAULT NOW(),
     CONSTRAINT pk_consultas_id PRIMARY KEY(ID),
     CONSTRAINT fk_consultas_pacientes_idp FOREIGN KEY (IDP) 
-        REFERENCES pacientes (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+        REFERENCES pacientes (ID) ON UPDATE CASCADE ON DELETE CASCADE,
    CONSTRAINT fk_consultas_medicos_idm FOREIGN KEY (IDM)
-        REFERENCES medicos (ID) ON UPDATE RESTRICT ON DELETE RESTRICT
+        REFERENCES medicos (ID) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 INSERT INTO consultas (idp, idm) VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
@@ -67,9 +67,6 @@ CREATE TABLE especialidad (
     CONSTRAINT pk_especialidad_id PRIMARY KEY (id)
 );
 
-ALTER TABLE especialidad RENAME CONSTRAINT pk_especialidad_medicos_id TO pk_especialidad_id;
-
-
 INSERT INTO especialidad (especialidad) VALUES ('Cardiología'), ('Pediatría'), ('Neumología'), ('Nutriología'), ('Psiquiatría');
 
 CREATE TABLE medicamentos (
@@ -77,9 +74,10 @@ CREATE TABLE medicamentos (
     nombre CHARACTER VARYING(30) UNIQUE,
     IDE INT,
     CONSTRAINT pk_medicamentos_id PRIMARY KEY(ID),
-    CONSTRAINT fk_medicamentos_especialidad_medicos_id FOREIGN KEY (IDE)
-        REFERENCES especialidad (ID) ON UPDATE RESTRICT ON DELETE RESTRICT
+    CONSTRAINT fk_medicamentos_especialidad_id FOREIGN KEY (IDE)
+        REFERENCES especialidad (ID) ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 -- FARMACOS Cardiovasculares
 INSERT INTO medicamentos (nombre, ide) VALUES ('Fármacos Inotrópicos', 1), ('Fármacos Lusitrópicos', 1), ('Fármacos cronotrópicos', 1), ('Fármacos presores', 1);
 
@@ -102,11 +100,13 @@ CREATE TABLE detalles_consulta_medicos (
     IDC INT,
     IDM INT,
     CONSTRAINT fk_detalles_consulta_consulta_id FOREIGN KEY (IDC)
-        REFERENCES consultas (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+        REFERENCES consultas (ID) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_detalles_consulta_medicos_medicamentos_id FOREIGN KEY (IDM)
-        REFERENCES medicamentos (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+        REFERENCES medicamentos (ID) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT pk_detalles_consulta_medicos_id PRIMARY KEY(ID, IDC, IDM)
 ); 
+
+
 
 INSERT INTO detalles_consulta_medicos VALUES (1, 1, 1), (2, 1, 2), (3, 2, 5), (4, 2, 6), (5, 3, 11), (6, 3, 12), (7, 4, 17), (8, 4, 18), (9, 4, 19), (10, 5, 23), (11, 5, 22);
 
@@ -116,10 +116,12 @@ CREATE TABLE especialidad_medicos (
     IDE INT,
     CONSTRAINT pk_especialidad_medicos_id PRIMARY KEY (ID),
     CONSTRAINT fk_especialidad_medicos_medicos_id FOREIGN KEY (IDM)
-        REFERENCES medicos (ID) ON UPDATE RESTRICT ON DELETE RESTRICT
+        REFERENCES medicos (ID) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_especialidad_medicos_especialidad_id FOREIGN KEY (IDE)
+        REFERENCES especialidad (ID) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-INSERT INTO especialidad_medicos VALUES (1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5);
+INSERT INTO especialidad_medicos (idm, ide) VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
 
 CREATE TABLE administradores (
     ID SMALLSERIAL,
@@ -185,8 +187,10 @@ $BODY$
 
         RETURN QUERY SELECT m.id, m.nombre, m.apellidop, m.apellidom, m.sexo, m.edad, m.telefono, e.especialidad
         FROM medicos AS m
+        INNER JOIN especialidad_medicos AS em
+        ON m.id = em.idm
         INNER JOIN especialidad AS e
-        ON m.id = e.id
+        ON e.id = em.ide
         LIMIT _limite::INT OFFSET inicio;
         
     END;
@@ -238,14 +242,27 @@ CREATE OR REPLACE FUNCTION medicos (
     _apellidom CHARACTER VARYING,
     _sexo CHARACTER VARYING,
     _edad CHARACTER VARYING,
-    _telefono CHARACTER VARYING,
-    _especialidad CHARACTER VARYING
+    _telefono CHARACTER VARYING
 ) RETURNS VOID AS
 $BODY$
 
     BEGIN
-        INSERT INTO medicos (nombre, apellidop, apellidom, sexo, edad, telefono, especialidad)   
-        VALUES (_nombre, _apellidop, _apellidom, _sexo, _edad::INT, _telefono, _especialidad);
+        INSERT INTO medicos (nombre, apellidop, apellidom, sexo, edad, telefono)   
+        VALUES (_nombre, _apellidop, _apellidom, _sexo, _edad::INT, _telefono);
+    END;
+
+$BODY$
+LANGUAGE plpgsql;
+/
+CREATE OR REPLACE FUNCTION especialidad_medicos (
+    _idm CHARACTER VARYING, 
+    _ide CHARACTER VARYING
+) RETURNS VOID AS
+$BODY$
+
+    BEGIN
+         INSERT INTO especialidad_medicos (idm, ide) 
+         VALUES (_idm::INT, _ide::INT);
     END;
 
 $BODY$
@@ -267,23 +284,6 @@ LANGUAGE plpgsql;
 
 -- Consulta donde muestre las consultas del paciente x
 -- CONSULTAS ANTERIORES 
-SELECT c.id, c.idp, c.idm
-    , p.nombre AS nombrepaciente
-    , p.apellidop AS apellidompaciente
-    , p.apellidom AS apellidoppaciente
-    , m.nombre AS nombremedico
-    , m.apellidop AS apellidopmedico
-    , m.apellidom AS apellidommedico
-    , c.fecha
-FROM consultas AS c
-INNER JOIN pacientes AS p
-ON c.idp = p.id
-INNER JOIN medicos AS m
-ON c.idm = m.id
-WHERE c.idp = 1;
-
-
-
 CREATE OR REPLACE FUNCTION consultas_paciente (_IDP CHARACTER VARYING)
 RETURNS TABLE (id SMALLINT, idp INT, idm INT, nombrepaciente CHARACTER VARYING
              , apellidompaciente CHARACTER VARYING, apellidoppaciente CHARACTER VARYING
@@ -337,27 +337,6 @@ $BODY$
    END;
 $BODY$
 LANGUAGE plpgsql;
-
-
-SELECT c.id, c.idp, c.idm
-                        , p.nombre AS nombrepaciente
-                        , p.apellidop AS apellidompaciente
-                        , p.apellidom AS apellidoppaciente
-                        , m.nombre AS nombremedico
-                        , m.apellidop AS apellidopmedico
-                        , m.apellidom AS apellidommedico
-                        , c.fecha
-                    FROM consultas AS c
-                    INNER JOIN pacientes AS p
-                    ON c.idp = p.id
-                    INNER JOIN medicos AS m
-                    ON c.idm = m.id
-                    WHERE c.idm = 1;
-
-SELECT m.id, m.nombre, m.apellidop, m.apellidom, m.sexo, m.edad, m.telefono, e.especialidad
-FROM medicos AS m
-INNER JOIN especialidad AS e
-ON m.id = e.id;
 
 -- FUNCION ACTUALIZAR
 
@@ -413,8 +392,6 @@ $BODY$
 
 $BODY$
 LANGUAGE plpgsql;
-
-SELECT actualizar ('', '', '', '');
 
 CREATE OR REPLACE FUNCTION eliminar (_id CHARACTER VARYING, _tabla CHARACTER VARYING)
 RETURNS VOID AS
